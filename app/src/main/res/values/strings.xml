@@ -1,0 +1,15 @@
+<resources>
+    <string name="app_name">远东优存</string>
+    <string name="title_activity_ru_ku">商品入库</string>
+    <string name="title_activity_chu_ku">商品出库</string>
+    <string name="title_activity_list">进销存管理系统</string>
+
+    <!-- NumberPicker样式关联值 -->
+    <string name="roboto_regular">sans-serif</string>
+    <string name="roboto_light">sans-serif-light</string>
+    <string name="roboto_condensed">sans-serif-condensed</string>
+    <string name="roboto_thin">sans-serif-thin</string>
+    <string name="roboto_medium">sans-serif-medium</string>
+    <string name="jiShuZhiChi">技术支持：阜新常青藤网络科技</string>
+    <string name="jiShuZhiChiPhone">156-6875-3332</string>
+</resources>

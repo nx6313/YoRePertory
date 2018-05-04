@@ -1,0 +1,29 @@
+<?xml version="1.0" encoding="utf-8"?>
+<LinearLayout xmlns:android="http://schemas.android.com/apk/res/android"
+    android:id="@+id/loadingMain"
+    android:layout_width="wrap_content"
+    android:layout_height="wrap_content"
+    android:background="#ffffff"
+    android:gravity="center"
+    android:orientation="vertical"
+    android:paddingBottom="15dp"
+    android:paddingLeft="20dp"
+    android:paddingRight="20dp"
+    android:paddingTop="20dp">
+
+    <pl.droidsonroids.gif.GifImageView
+        android:id="@+id/loadingGif"
+        android:layout_width="150dp"
+        android:layout_height="60dp"
+        android:src="@drawable/ref_ing" />
+
+    <TextView
+        android:id="@+id/loadingTip"
+        android:layout_width="wrap_content"
+        android:layout_height="wrap_content"
+        android:layout_marginBottom="5dp"
+        android:layout_marginTop="5dp"
+        android:text="努力加载中，请稍后"
+        android:textColor="#4e4e4e"
+        android:textSize="18sp" />
+</LinearLayout>

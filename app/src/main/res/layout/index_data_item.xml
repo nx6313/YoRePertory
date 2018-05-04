@@ -1,0 +1,84 @@
+<?xml version="1.0" encoding="utf-8"?>
+<LinearLayout xmlns:android="http://schemas.android.com/apk/res/android"
+    android:layout_width="match_parent"
+    android:layout_height="wrap_content"
+    android:gravity="center"
+    android:orientation="vertical"
+    android:paddingBottom="2dp"
+    android:paddingLeft="8dp"
+    android:paddingRight="12dp"
+    android:paddingTop="10dp">
+
+    <LinearLayout
+        android:layout_width="match_parent"
+        android:layout_height="wrap_content"
+        android:orientation="horizontal">
+
+        <ImageView
+            android:id="@+id/imgGoodShow"
+            android:layout_width="100dp"
+            android:layout_height="100dp"
+            android:src="@drawable/good_default" />
+
+        <RelativeLayout
+            android:layout_width="0dp"
+            android:layout_height="100dp"
+            android:layout_marginLeft="14dp"
+            android:layout_weight="1"
+            android:orientation="vertical">
+
+            <TextView
+                android:id="@+id/tvGoodName"
+                android:layout_width="match_parent"
+                android:layout_height="wrap_content"
+                android:text="商品名称商品名称商品名称商品名称商品名称商品名称"
+                android:textColor="#2e2e2e"
+                android:textSize="17sp"
+                android:textStyle="bold" />
+
+            <TextView
+                android:id="@+id/tvGoodLeiJiKuCun"
+                android:layout_width="wrap_content"
+                android:layout_height="wrap_content"
+                android:layout_above="@+id/item_footer"
+                android:layout_marginBottom="8dp"
+                android:background="@drawable/bg_kucun_tip"
+                android:paddingBottom="2dp"
+                android:paddingLeft="4dp"
+                android:paddingRight="4dp"
+                android:paddingTop="2dp"
+                android:text="累计出库量 1000 件"
+                android:textColor="#ffd900" />
+
+            <RelativeLayout
+                android:id="@+id/item_footer"
+                android:layout_width="match_parent"
+                android:layout_height="wrap_content"
+                android:layout_alignParentBottom="true">
+
+                <TextView
+                    android:id="@+id/tvGoodPrice"
+                    android:layout_width="wrap_content"
+                    android:layout_height="wrap_content"
+                    android:layout_alignParentLeft="true"
+                    android:text="69.3"
+                    android:textColor="#fd3434"
+                    android:textSize="18sp" />
+
+                <TextView
+                    android:id="@+id/tvGoodCurrentKuCun"
+                    android:layout_width="wrap_content"
+                    android:layout_height="wrap_content"
+                    android:layout_alignParentRight="true"
+                    android:drawablePadding="6dp"
+                    android:text="现有库存 1000 件" />
+            </RelativeLayout>
+        </RelativeLayout>
+    </LinearLayout>
+
+    <View
+        android:layout_width="match_parent"
+        android:layout_height="1px"
+        android:layout_marginTop="8dp"
+        android:background="#e2e2e2" />
+</LinearLayout>
