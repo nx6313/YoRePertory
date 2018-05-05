@@ -228,7 +228,13 @@ public class ListActivity extends AppCompatActivity {
 
             @Override
             public void onLoadmore() {
-                springView.onFinishFreshAndLoad();
+                String searchVal = etSearchList.getText().toString().trim();
+                if (ComFun.strNull(searchVal)) {
+                    searchGoodListFn(searchVal, true);
+                } else {
+                    searchTipLayout.setVisibility(View.VISIBLE);
+                    initGoodsListData(true);
+                }
             }
         });
     }

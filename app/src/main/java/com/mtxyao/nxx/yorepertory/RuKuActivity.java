@@ -8,7 +8,6 @@ import android.support.v7.app.AppCompatActivity;
 import android.support.v7.widget.Toolbar;
 import android.text.Editable;
 import android.text.TextWatcher;
-import android.util.Log;
 import android.view.KeyEvent;
 import android.view.LayoutInflater;
 import android.view.View;
@@ -29,14 +28,12 @@ import com.mtxyao.nxx.yorepertory.util.ComFun;
 import com.mtxyao.nxx.yorepertory.util.DisplayUtil;
 import com.mtxyao.nxx.yorepertory.util.Urls;
 import com.mtxyao.nxx.yorepertory.util.UserDataUtil;
+import com.squareup.picasso.Picasso;
 
-import org.json.JSONArray;
 import org.json.JSONException;
 import org.json.JSONObject;
 
 import java.math.BigDecimal;
-import java.util.ArrayList;
-import java.util.List;
 
 public class RuKuActivity extends AppCompatActivity implements TextWatcher {
     private long exitTime;
@@ -115,7 +112,14 @@ public class RuKuActivity extends AppCompatActivity implements TextWatcher {
                     try {
                         JSONObject data = new JSONObject(response.body());
                         if (data.has("success") && data.getBoolean("success")) {
-                            String goodTitle = data.getString("title");
+                            String goodTitle = data.has("title") ? data.getString("title") : "查询未果";
+                            String goodImg = data.has("img") ? data.getString("img") : "";
+                            if (ComFun.strNull(goodImg)) {
+                                String goodPath = Urls.URL_UPLOAD_BEFORE + goodImg;
+                                Picasso.with(RuKuActivity.this).load(goodPath.toString()).error(R.drawable.banner_default).into(imgGoodPic);
+                            } else {
+                                imgGoodPic.setImageResource(R.drawable.good_default);
+                            }
                             tvGoodInfo.setText("名称；" + goodTitle);
                         }
                     } catch (JSONException e) {
@@ -151,7 +155,7 @@ public class RuKuActivity extends AppCompatActivity implements TextWatcher {
         if (ComFun.strNull(other)) {
             allPrice = allPrice.add(new BigDecimal(other));
         }
-        tvAllPrice.setText("¥" + allPrice.setScale(2).toString());
+        tvAllPrice.setText("¥" + allPrice.doubleValue());
     }
 
     public void toRuKu(View view) {
@@ -164,22 +168,27 @@ public class RuKuActivity extends AppCompatActivity implements TextWatcher {
         String content = etRkRemark.getText().toString();
         if (!ComFun.strNull(code)) {
             ComFun.showToast(RuKuActivity.this, "入库商品条码未扫描", Toast.LENGTH_LONG);
+            formLayout.requestFocus();
             return;
         }
         if (!ComFun.strNull(price)) {
             ComFun.showToast(RuKuActivity.this, "请输入商品单价", Toast.LENGTH_LONG);
+            formLayout.requestFocus();
             return;
         }
         if (!ComFun.strNull(number)) {
             ComFun.showToast(RuKuActivity.this, "请输入进货数量", Toast.LENGTH_LONG);
+            formLayout.requestFocus();
             return;
         }
         if (!ComFun.strNull(wuliu)) {
             ComFun.showToast(RuKuActivity.this, "请输入物流费用", Toast.LENGTH_LONG);
+            formLayout.requestFocus();
             return;
         }
         if (!ComFun.strNull(other)) {
             ComFun.showToast(RuKuActivity.this, "请输入其他费用", Toast.LENGTH_LONG);
+            formLayout.requestFocus();
             return;
         }
         ComFun.showLoading(RuKuActivity.this, "正在添加入库单");
@@ -199,12 +208,14 @@ public class RuKuActivity extends AppCompatActivity implements TextWatcher {
                     ComFun.showToast(RuKuActivity.this, data.getString("msg"), Toast.LENGTH_SHORT);
                     if (data.has("success") && data.getBoolean("success")) {
                         etTiaoMaShow.setText("");
+                        imgGoodPic.setImageResource(R.drawable.good_default);
                         tvGoodInfo.setText("名称； ～ ～ ～");
                         etCommodityPrice.setText("");
                         etGetCount.setText("");
                         etLogisticsCost.setText("");
                         etOtherCost.setText("");
                         etRkRemark.setText("");
+                        tvAllPrice.setText("¥0.00");
                         formLayout.requestFocus();
                     }
                 } catch (JSONException e) {
