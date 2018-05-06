@@ -50,7 +50,7 @@
                     android:layout_weight="1"
                     android:background="@color/zxing_transparent"
                     android:hint="请输入您的手机号"
-                    android:inputType="phone"
+                    android:inputType="textEmailAddress"
                     android:paddingBottom="12dp"
                     android:paddingLeft="8dp"
                     android:paddingRight="8dp"
