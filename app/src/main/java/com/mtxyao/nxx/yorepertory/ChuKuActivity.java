@@ -1,5 +1,6 @@
 package com.mtxyao.nxx.yorepertory;
 
+import android.content.Context;
 import android.content.Intent;
 import android.graphics.Color;
 import android.graphics.drawable.ColorDrawable;
@@ -11,7 +12,10 @@ import android.text.Editable;
 import android.text.TextWatcher;
 import android.view.KeyEvent;
 import android.view.LayoutInflater;
+import android.view.MotionEvent;
 import android.view.View;
+import android.view.ViewGroup;
+import android.view.inputmethod.InputMethodManager;
 import android.widget.EditText;
 import android.widget.ImageView;
 import android.widget.LinearLayout;
@@ -97,7 +101,7 @@ public class ChuKuActivity extends AppCompatActivity implements TextWatcher {
                     @Override
                     public void run() {
                         long timeDistance = System.currentTimeMillis() - etSearchInputTime;
-                        if (timeDistance >= 1800) {
+                        if (timeDistance >= 1600) {
                             String userPhoneVal = etBuyUserPhone.getText().toString().trim();
                             if (ComFun.strNull(userPhoneVal)) {
                                 OkGo.<String>post(Urls.URL_BEFORE + Urls.URL_CHUKU_PRICE)
@@ -122,6 +126,7 @@ public class ChuKuActivity extends AppCompatActivity implements TextWatcher {
                                     @Override
                                     public void onError(Response<String> response) {
                                         etOutPrice.setText("");
+                                        ComFun.formatResponse(ChuKuActivity.this, response, "获取与购买人相关联的出货价格", formLayout);
                                         super.onError(response);
                                     }
 
@@ -135,7 +140,7 @@ public class ChuKuActivity extends AppCompatActivity implements TextWatcher {
                             }
                         }
                     }
-                }, 1800);
+                }, 1600);
             }
 
             @Override
@@ -164,9 +169,9 @@ public class ChuKuActivity extends AppCompatActivity implements TextWatcher {
         super.onActivityResult(requestCode, resultCode, data);
         IntentResult scanResult = IntentIntegrator.parseActivityResult(requestCode, resultCode, data);
         if (scanResult != null) {
-            String result = scanResult.getContents();
-            etTiaoMaShow.setText(result);
+            final String result = scanResult.getContents();
             // 执行条码查询
+            ComFun.showLoading(ChuKuActivity.this, "获取商品信息中");
             OkGo.<String>post(Urls.URL_BEFORE + Urls.URL_SCANNING)
                     .params("goodsCode", result)
                     .tag(ChuKuActivity.this).execute(new StringCallback() {
@@ -175,6 +180,7 @@ public class ChuKuActivity extends AppCompatActivity implements TextWatcher {
                     try {
                         JSONObject data = new JSONObject(response.body());
                         if (data.has("success") && data.getBoolean("success")) {
+                            etTiaoMaShow.setText(result);
                             String goodTitle = data.has("title") ? data.getString("title") : "查询未果";
                             String goodImg = data.has("img") ? data.getString("img") : "";
                             String goodPrice = data.has("price") ? data.getString("price") : "查询未果";
@@ -187,6 +193,8 @@ public class ChuKuActivity extends AppCompatActivity implements TextWatcher {
                             }
                             tvGoodInfo.setText("名称；" + goodTitle + "\n单价；¥" + goodPrice + "\n剩余库存：" + goodStock);
                             saoMiaoGoodPrice = new BigDecimal(goodPrice);
+                        } else {
+                            ComFun.showToast(ChuKuActivity.this, "该商品数据暂未录入", Toast.LENGTH_LONG);
                         }
                     } catch (JSONException e) {
                     }
@@ -194,11 +202,13 @@ public class ChuKuActivity extends AppCompatActivity implements TextWatcher {
 
                 @Override
                 public void onError(Response<String> response) {
+                    ComFun.formatResponse(ChuKuActivity.this, response, "获取商品信息", formLayout);
                     super.onError(response);
                 }
 
                 @Override
                 public void onFinish() {
+                    ComFun.hideLoading();
                     super.onFinish();
                 }
             });
@@ -239,7 +249,7 @@ public class ChuKuActivity extends AppCompatActivity implements TextWatcher {
             return;
         }
         if (!ComFun.strNull(price)) {
-            ComFun.showToast(ChuKuActivity.this, "与该购买人相关联的出货价格不存在或存在错误", Toast.LENGTH_LONG);
+            ComFun.showToast(ChuKuActivity.this, "与该购买人相关联的出货价格不存在或正在获取中", Toast.LENGTH_LONG);
             formLayout.requestFocus();
             return;
         }
@@ -274,6 +284,7 @@ public class ChuKuActivity extends AppCompatActivity implements TextWatcher {
 
             @Override
             public void onError(Response<String> response) {
+                ComFun.formatResponse(ChuKuActivity.this, response, "添加出库单", formLayout);
                 super.onError(response);
             }
 
@@ -347,5 +358,50 @@ public class ChuKuActivity extends AppCompatActivity implements TextWatcher {
     @Override
     public void afterTextChanged(Editable s) {
 
+    }
+
+    @Override
+    public boolean dispatchTouchEvent(MotionEvent ev) {
+        if (ev.getAction() == MotionEvent.ACTION_DOWN) {
+            View v = getCurrentFocus();
+            if (isShouldHideInput(v, ev)) {
+                InputMethodManager imm = (InputMethodManager) getSystemService(Context.INPUT_METHOD_SERVICE);
+                if (imm != null) {
+                    imm.hideSoftInputFromWindow(v.getWindowToken(), 0);
+                }
+            }
+            return super.dispatchTouchEvent(ev);
+        }
+        // 必不可少，否则所有的组件都不会有TouchEvent了
+        if (getWindow().superDispatchTouchEvent(ev)) {
+            return true;
+        }
+        return super.dispatchTouchEvent(ev);
+    }
+
+    public boolean isShouldHideInput(View v, MotionEvent event) {
+        if (v != null && (v instanceof EditText)) {
+            if (v.getId() == R.id.etBuyUserPhone ||
+                    v.getId() == R.id.etOutCount ||
+                    v.getId() == R.id.etRkRemark) {
+                ViewGroup chatDoLayout = (ViewGroup) v.getParent();
+                int[] leftTop = {0, 0};
+                //获取输入框当前的location位置
+                chatDoLayout.getLocationInWindow(leftTop);
+                int left = leftTop[0];
+                int top = leftTop[1];
+                int bottom = top + chatDoLayout.getHeight();
+                int right = left + chatDoLayout.getWidth();
+                if (event.getX() > left && event.getX() < right
+                        && event.getY() > top && event.getY() < bottom) {
+                    // 点击的是输入框区域，保留点击EditText的事件
+                    return false;
+                } else {
+                    v.clearFocus();
+                    return true;
+                }
+            }
+        }
+        return false;
     }
 }

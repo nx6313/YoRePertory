@@ -149,6 +149,7 @@ public class ListActivity extends AppCompatActivity {
 
             @Override
             public void onError(Response<String> response) {
+                ComFun.formatResponse(ListActivity.this, response, "获取轮播图数据", null);
                 super.onError(response);
             }
 
@@ -282,6 +283,7 @@ public class ListActivity extends AppCompatActivity {
 
             @Override
             public void onError(Response<String> response) {
+                ComFun.formatResponse(ListActivity.this, response, "获取商品列表数据", null);
                 super.onError(response);
             }
 
@@ -327,6 +329,7 @@ public class ListActivity extends AppCompatActivity {
 
             @Override
             public void onError(Response<String> response) {
+                ComFun.formatResponse(ListActivity.this, response, "查询商品列表数据", null);
                 super.onError(response);
             }
 

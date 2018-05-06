@@ -95,6 +95,7 @@ public class LoginActivity extends Activity {
 
             @Override
             public void onError(Response<String> response) {
+                ComFun.formatResponse(LoginActivity.this, response, "用户登录", null);
                 super.onError(response);
             }
 

@@ -174,6 +174,7 @@ public class RegisterActivity extends Activity {
 
             @Override
             public void onError(Response<String> response) {
+                ComFun.formatResponse(RegisterActivity.this, response, "用户注册", null);
                 super.onError(response);
             }
 
