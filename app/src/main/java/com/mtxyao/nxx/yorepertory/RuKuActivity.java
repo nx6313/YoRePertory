@@ -106,45 +106,47 @@ public class RuKuActivity extends AppCompatActivity implements TextWatcher {
         IntentResult scanResult = IntentIntegrator.parseActivityResult(requestCode, resultCode, data);
         if (scanResult != null) {
             final String result = scanResult.getContents();
-            // 执行条码查询
-            ComFun.showLoading(RuKuActivity.this, "获取商品信息中");
-            OkGo.<String>post(Urls.URL_BEFORE + Urls.URL_SCANNING)
-                    .params("goodsCode", result)
-                    .tag(RuKuActivity.this).execute(new StringCallback() {
-                @Override
-                public void onSuccess(Response<String> response) {
-                    try {
-                        JSONObject data = new JSONObject(response.body());
-                        if (data.has("success") && data.getBoolean("success")) {
-                            etTiaoMaShow.setText(result);
-                            String goodTitle = data.has("title") ? data.getString("title") : "查询未果";
-                            String goodImg = data.has("img") ? data.getString("img") : "";
-                            if (ComFun.strNull(goodImg)) {
-                                String goodPath = Urls.URL_UPLOAD_BEFORE + goodImg;
-                                Picasso.with(RuKuActivity.this).load(goodPath.toString()).error(R.drawable.banner_default).into(imgGoodPic);
+            if (ComFun.strNull(result)) {
+                // 执行条码查询
+                ComFun.showLoading(RuKuActivity.this, "获取商品信息中");
+                OkGo.<String>post(Urls.URL_BEFORE + Urls.URL_SCANNING)
+                        .params("goodsCode", result)
+                        .tag(RuKuActivity.this).execute(new StringCallback() {
+                    @Override
+                    public void onSuccess(Response<String> response) {
+                        try {
+                            JSONObject data = new JSONObject(response.body());
+                            if (data.has("success") && data.getBoolean("success")) {
+                                etTiaoMaShow.setText(result);
+                                String goodTitle = data.has("title") ? data.getString("title") : "查询未果";
+                                String goodImg = data.has("img") ? data.getString("img") : "";
+                                if (ComFun.strNull(goodImg)) {
+                                    String goodPath = Urls.URL_UPLOAD_BEFORE + goodImg;
+                                    Picasso.with(RuKuActivity.this).load(goodPath.toString()).error(R.drawable.banner_default).into(imgGoodPic);
+                                } else {
+                                    imgGoodPic.setImageResource(R.drawable.good_default);
+                                }
+                                tvGoodInfo.setText("名称；" + goodTitle);
                             } else {
-                                imgGoodPic.setImageResource(R.drawable.good_default);
+                                ComFun.showToast(RuKuActivity.this, "该商品数据暂未录入", Toast.LENGTH_LONG);
                             }
-                            tvGoodInfo.setText("名称；" + goodTitle);
-                        } else {
-                            ComFun.showToast(RuKuActivity.this, "该商品数据暂未录入", Toast.LENGTH_LONG);
+                        } catch (JSONException e) {
                         }
-                    } catch (JSONException e) {
                     }
-                }
 
-                @Override
-                public void onError(Response<String> response) {
-                    ComFun.formatResponse(RuKuActivity.this, response, "获取商品信息", formLayout);
-                    super.onError(response);
-                }
+                    @Override
+                    public void onError(Response<String> response) {
+                        ComFun.formatResponse(RuKuActivity.this, response, "获取商品信息", formLayout);
+                        super.onError(response);
+                    }
 
-                @Override
-                public void onFinish() {
-                    ComFun.hideLoading();
-                    super.onFinish();
-                }
-            });
+                    @Override
+                    public void onFinish() {
+                        ComFun.hideLoading();
+                        super.onFinish();
+                    }
+                });
+            }
         }
     }
 
@@ -290,6 +292,37 @@ public class RuKuActivity extends AppCompatActivity implements TextWatcher {
                     public void close() {
                     }
                 });
+            }
+        });
+
+        boolean hasOpenDebugMode = UserDataUtil.getBooleanByKey(RuKuActivity.this, UserDataUtil.fySysSet, UserDataUtil.key_debugMode);
+        final TextView btnToggleDebug = contentView.findViewById(R.id.btnToggleDebug);
+        if (hasOpenDebugMode) {
+            btnToggleDebug.setTag("open");
+            btnToggleDebug.setText("关闭调试模式");
+            btnToggleDebug.setTextColor(Color.parseColor("#2E8B57"));
+        } else {
+            btnToggleDebug.setTag("close");
+            btnToggleDebug.setText("开启调试模式");
+            btnToggleDebug.setTextColor(Color.parseColor("#646464"));
+        }
+        btnToggleDebug.setOnClickListener(new View.OnClickListener() {
+            @Override
+            public void onClick(View v) {
+                String curStatus = v.getTag().toString();
+                if (curStatus.equals("open")) {
+                    // 关闭
+                    btnToggleDebug.setTag("close");
+                    btnToggleDebug.setText("开启调试模式");
+                    btnToggleDebug.setTextColor(Color.parseColor("#646464"));
+                    UserDataUtil.saveBooleanData(RuKuActivity.this, UserDataUtil.fySysSet, UserDataUtil.key_debugMode, false);
+                } else {
+                    // 开启
+                    btnToggleDebug.setTag("open");
+                    btnToggleDebug.setText("关闭调试模式");
+                    btnToggleDebug.setTextColor(Color.parseColor("#2E8B57"));
+                    UserDataUtil.saveBooleanData(RuKuActivity.this, UserDataUtil.fySysSet, UserDataUtil.key_debugMode, true);
+                }
             }
         });
     }

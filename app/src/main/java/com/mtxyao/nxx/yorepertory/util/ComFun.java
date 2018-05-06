@@ -566,30 +566,34 @@ public class ComFun {
      * @param response
      * @return
      */
-    public static String formatResponse(Context context, Response<String> response, String when, View imeView) {
+    public static void formatResponse(Context context, Response<String> response, String when, View imeView) {
         closeIME(context, imeView);
-        String error = "";
-        try {
-            error = response.getRawResponse().body().string();
-        } catch (IOException e) {
-        }
-        LayoutInflater lf = (LayoutInflater) context.getSystemService(Context.LAYOUT_INFLATER_SERVICE);
-        View errorView = lf.inflate(R.layout.response_error_layout, null);
-        TextView tvErrorTitle = errorView.findViewById(R.id.tvErrorTitle);
-        tvErrorTitle.setText(when + "时，出现错误：");
-        WebView wvErrorInfo = errorView.findViewById(R.id.wvErrorInfo);
-        wvErrorInfo.setInitialScale(100);
-        WebSettings settings = wvErrorInfo.getSettings();
-        settings.setLayoutAlgorithm(WebSettings.LayoutAlgorithm.SINGLE_COLUMN);
-        settings.setSupportZoom(true);
-        settings.setBuiltInZoomControls(true);
-        wvErrorInfo.loadDataWithBaseURL(null, error, "text/html", "utf-8", null);
-        showDialog(context, errorView, new DialogBtnCallback() {
-            @Override
-            public void ok() {
-                super.ok();
+        boolean hasOpenDebugMode = UserDataUtil.getBooleanByKey(context, UserDataUtil.fySysSet, UserDataUtil.key_debugMode);
+        if (hasOpenDebugMode) {
+            String error = "";
+            try {
+                error = response.getRawResponse().body().string();
+            } catch (IOException e) {
             }
-        });
-        return error;
+            LayoutInflater lf = (LayoutInflater) context.getSystemService(Context.LAYOUT_INFLATER_SERVICE);
+            View errorView = lf.inflate(R.layout.response_error_layout, null);
+            TextView tvErrorTitle = errorView.findViewById(R.id.tvErrorTitle);
+            tvErrorTitle.setText(when + "时，出现错误：");
+            WebView wvErrorInfo = errorView.findViewById(R.id.wvErrorInfo);
+            wvErrorInfo.setInitialScale(100);
+            WebSettings settings = wvErrorInfo.getSettings();
+            settings.setLayoutAlgorithm(WebSettings.LayoutAlgorithm.SINGLE_COLUMN);
+            settings.setSupportZoom(true);
+            settings.setBuiltInZoomControls(true);
+            wvErrorInfo.loadDataWithBaseURL(null, error, "text/html", "utf-8", null);
+            showDialog(context, errorView, new DialogBtnCallback() {
+                @Override
+                public void ok() {
+                    super.ok();
+                }
+            });
+        } else {
+            showToast(context, when + "出错", Toast.LENGTH_LONG);
+        }
     }
 }

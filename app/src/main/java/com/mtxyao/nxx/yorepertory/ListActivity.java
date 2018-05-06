@@ -477,6 +477,37 @@ public class ListActivity extends AppCompatActivity {
                 });
             }
         });
+
+        boolean hasOpenDebugMode = UserDataUtil.getBooleanByKey(ListActivity.this, UserDataUtil.fySysSet, UserDataUtil.key_debugMode);
+        final TextView btnToggleDebug = contentView.findViewById(R.id.btnToggleDebug);
+        if (hasOpenDebugMode) {
+            btnToggleDebug.setTag("open");
+            btnToggleDebug.setText("关闭调试模式");
+            btnToggleDebug.setTextColor(Color.parseColor("#2E8B57"));
+        } else {
+            btnToggleDebug.setTag("close");
+            btnToggleDebug.setText("开启调试模式");
+            btnToggleDebug.setTextColor(Color.parseColor("#646464"));
+        }
+        btnToggleDebug.setOnClickListener(new View.OnClickListener() {
+            @Override
+            public void onClick(View v) {
+                String curStatus = v.getTag().toString();
+                if (curStatus.equals("open")) {
+                    // 关闭
+                    btnToggleDebug.setTag("close");
+                    btnToggleDebug.setText("开启调试模式");
+                    btnToggleDebug.setTextColor(Color.parseColor("#646464"));
+                    UserDataUtil.saveBooleanData(ListActivity.this, UserDataUtil.fySysSet, UserDataUtil.key_debugMode, false);
+                } else {
+                    // 开启
+                    btnToggleDebug.setTag("open");
+                    btnToggleDebug.setText("关闭调试模式");
+                    btnToggleDebug.setTextColor(Color.parseColor("#2E8B57"));
+                    UserDataUtil.saveBooleanData(ListActivity.this, UserDataUtil.fySysSet, UserDataUtil.key_debugMode, true);
+                }
+            }
+        });
     }
 
     public void clearSearchInput(View view) {
