@@ -25,6 +25,7 @@ import android.widget.LinearLayout;
 import android.widget.PopupWindow;
 import android.widget.RelativeLayout;
 import android.widget.TextView;
+import android.widget.Toast;
 
 import com.google.gson.reflect.TypeToken;
 import com.liaoinstan.springview.widget.SpringView;
@@ -63,6 +64,7 @@ public class ListActivity extends AppCompatActivity {
     private long etSearchInputTime;
     private long exitTime;
     private boolean isSearching = false;
+    private TextView tvPageTitle;
 
     @Override
     protected void onCreate(Bundle savedInstanceState) {
@@ -72,7 +74,8 @@ public class ListActivity extends AppCompatActivity {
         setSupportActionBar(toolbar);
 
         // 处理为标题居中
-        ((TextView) toolbar.findViewById(R.id.tvPageTitle)).setText(toolbar.getTitle());
+        tvPageTitle = toolbar.findViewById(R.id.tvPageTitle);
+        tvPageTitle.setText(toolbar.getTitle());
         getSupportActionBar().setDisplayShowTitleEnabled(false);
 
         initView();
@@ -93,6 +96,29 @@ public class ListActivity extends AppCompatActivity {
         springView.setHeader(new ListRefHeader());
         springView.setFooter(new ListRefFooter());
         indexDataWrap = findViewById(R.id.indexDataWrap);
+        ComFun.checkLongTouch(tvPageTitle, new ComFun.LoneTouchProperty(30 * 1000), new ComFun.LongTouchCallback() {
+            @Override
+            public boolean isLongPressed() {
+                boolean isDebugModule = UserDataUtil.getBooleanByKey(ListActivity.this, UserDataUtil.fySysSet, UserDataUtil.key_tempDebugModule);
+                if (isDebugModule) {
+                    ComFun.showToast(ListActivity.this, "当前已经是调试模式了", Toast.LENGTH_LONG);
+                } else {
+                    ComFun.showToast(ListActivity.this, "手指释放后将临时调整为调试模式", Toast.LENGTH_LONG);
+                }
+                return super.isLongPressed();
+            }
+
+            @Override
+            public boolean finishLongPress() {
+                ComFun.hideToast();
+                boolean isDebugModule = UserDataUtil.getBooleanByKey(ListActivity.this, UserDataUtil.fySysSet, UserDataUtil.key_tempDebugModule);
+                if (!isDebugModule) {
+                    UserDataUtil.saveBooleanData(ListActivity.this, UserDataUtil.fySysSet, UserDataUtil.key_tempDebugModule, true);
+                    ComFun.showToastSingle(ListActivity.this, "已调整为临时调试模式，程序重新启动后恢复普通模式", Toast.LENGTH_LONG);
+                }
+                return super.finishLongPress();
+            }
+        });
     }
 
     private void initBanner() {
@@ -142,8 +168,11 @@ public class ListActivity extends AppCompatActivity {
                             UserDataUtil.saveListData(ListActivity.this, UserDataUtil.fyGoodsList, UserDataUtil.key_banner, getImages);
                             banner.update(getImages);
                         }
+                    } else {
+                        ComFun.formatResponse(ListActivity.this, "接口返回值信息为：" + response.body(), "获取轮播图数据", null, false);
                     }
                 } catch (JSONException e) {
+                    ComFun.formatResponse(ListActivity.this, "接口返回值信息为：" + response.body() + "\n转换为JSON格式异常，异常信息：" + e.getMessage(), "获取轮播图数据", null, true);
                 }
             }
 
@@ -276,8 +305,11 @@ public class ListActivity extends AppCompatActivity {
                             UserDataUtil.saveListData(ListActivity.this, UserDataUtil.fyGoodsList, UserDataUtil.key_goods, list);
                             fullGoodsListView(list);
                         }
+                    } else {
+                        ComFun.formatResponse(ListActivity.this, "接口返回值信息为：" + response.body(), "获取商品列表数据", null, false);
                     }
                 } catch (JSONException e) {
+                    ComFun.formatResponse(ListActivity.this, "接口返回值信息为：" + response.body() + "\n转换为JSON格式异常，异常信息：" + e.getMessage(), "获取商品列表数据", null, true);
                 }
             }
 
@@ -322,8 +354,11 @@ public class ListActivity extends AppCompatActivity {
                         } else if (data.getInt("code") == 1) {
                             indexDataWrap.removeAllViews();
                         }
+                    } else {
+                        ComFun.formatResponse(ListActivity.this, "接口返回值信息为：" + response.body(), "查询商品列表数据", null, false);
                     }
                 } catch (JSONException e) {
+                    ComFun.formatResponse(ListActivity.this, "接口返回值信息为：" + response.body() + "\n转换为JSON格式异常，异常信息：" + e.getMessage(), "查询商品列表数据", null, true);
                 }
             }
 
@@ -475,37 +510,6 @@ public class ListActivity extends AppCompatActivity {
                     public void close() {
                     }
                 });
-            }
-        });
-
-        boolean hasOpenDebugMode = UserDataUtil.getBooleanByKey(ListActivity.this, UserDataUtil.fySysSet, UserDataUtil.key_debugMode);
-        final TextView btnToggleDebug = contentView.findViewById(R.id.btnToggleDebug);
-        if (hasOpenDebugMode) {
-            btnToggleDebug.setTag("open");
-            btnToggleDebug.setText("关闭调试模式");
-            btnToggleDebug.setTextColor(Color.parseColor("#2E8B57"));
-        } else {
-            btnToggleDebug.setTag("close");
-            btnToggleDebug.setText("开启调试模式");
-            btnToggleDebug.setTextColor(Color.parseColor("#646464"));
-        }
-        btnToggleDebug.setOnClickListener(new View.OnClickListener() {
-            @Override
-            public void onClick(View v) {
-                String curStatus = v.getTag().toString();
-                if (curStatus.equals("open")) {
-                    // 关闭
-                    btnToggleDebug.setTag("close");
-                    btnToggleDebug.setText("开启调试模式");
-                    btnToggleDebug.setTextColor(Color.parseColor("#646464"));
-                    UserDataUtil.saveBooleanData(ListActivity.this, UserDataUtil.fySysSet, UserDataUtil.key_debugMode, false);
-                } else {
-                    // 开启
-                    btnToggleDebug.setTag("open");
-                    btnToggleDebug.setText("关闭调试模式");
-                    btnToggleDebug.setTextColor(Color.parseColor("#2E8B57"));
-                    UserDataUtil.saveBooleanData(ListActivity.this, UserDataUtil.fySysSet, UserDataUtil.key_debugMode, true);
-                }
             }
         });
     }

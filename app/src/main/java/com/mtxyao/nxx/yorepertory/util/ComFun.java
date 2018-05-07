@@ -12,7 +12,9 @@ import android.os.Build;
 import android.support.v4.content.FileProvider;
 import android.text.TextUtils;
 import android.util.DisplayMetrics;
+import android.view.Gravity;
 import android.view.LayoutInflater;
+import android.view.MotionEvent;
 import android.view.View;
 import android.view.Window;
 import android.view.WindowManager;
@@ -25,6 +27,7 @@ import android.widget.Toast;
 
 import com.lzy.okgo.model.Response;
 import com.mtxyao.nxx.yorepertory.R;
+import com.mtxyao.nxx.yorepertory.entity.UserData;
 
 import java.io.File;
 import java.io.IOException;
@@ -92,11 +95,21 @@ public class ComFun {
     public static void showToast(Context context, String text, int duration) {
         if (mToast == null) {
             mToast = Toast.makeText(context, text, duration);
+            mToast.setGravity(Gravity.CENTER, 0, 0);
         } else {
             mToast.setText(text);
             mToast.setDuration(duration);
         }
         mToast.show();
+    }
+
+    /**
+     * 关闭当前正显示的Toast提示信息
+     */
+    public static void hideToast() {
+        if (mToast != null) {
+            mToast.cancel();
+        }
     }
 
     /**
@@ -373,6 +386,27 @@ public class ComFun {
     }
 
     /**
+     * 显示提示弹窗
+     *
+     * @param context
+     * @param dialogBtn
+     */
+    public static void showDialog(Context context, String content, final DialogBtnCallback dialogBtn, String btnVal) {
+        android.support.v7.app.AlertDialog.Builder normalDialog = new android.support.v7.app.AlertDialog.Builder(context);
+        if (strNull(content)) {
+            normalDialog.setTitle(content);
+        }
+        String btnStr = strNull(btnVal) ? btnVal : "我知道了";
+        normalDialog.setPositiveButton(btnStr, new DialogInterface.OnClickListener() {
+            @Override
+            public void onClick(DialogInterface dialog, int which) {
+                dialogBtn.ok();
+            }
+        });
+        normalDialog.show();
+    }
+
+    /**
      * 显示自定义窗口弹窗
      *
      * @param context
@@ -568,8 +602,9 @@ public class ComFun {
      */
     public static void formatResponse(Context context, Response<String> response, String when, View imeView) {
         closeIME(context, imeView);
-        boolean hasOpenDebugMode = UserDataUtil.getBooleanByKey(context, UserDataUtil.fySysSet, UserDataUtil.key_debugMode);
-        if (hasOpenDebugMode) {
+        UserData userData = UserDataUtil.getUserData(context, UserData.class);
+        boolean isDebugModule = userData.isDebug() && !userData.isNeedLogin();
+        if (isDebugModule) {
             String error = "";
             try {
                 error = response.getRawResponse().body().string();
@@ -595,5 +630,203 @@ public class ComFun {
         } else {
             showToast(context, when + "出错", Toast.LENGTH_LONG);
         }
+    }
+
+    /**
+     * 将错误信息debugVal显示到debug调试面板
+     *
+     * @param debugVal
+     * @return
+     */
+    public static void formatResponse(Context context, String debugVal, String when, View imeView, boolean showErrorTip) {
+        closeIME(context, imeView);
+        UserData userData = UserDataUtil.getUserData(context, UserData.class);
+        boolean isDebugModuleTemp = UserDataUtil.getBooleanByKey(context, UserDataUtil.fySysSet, UserDataUtil.key_tempDebugModule);
+        boolean isDebugModule = userData.isDebug() && !userData.isNeedLogin();
+        if (isDebugModuleTemp || isDebugModule) {
+            LayoutInflater lf = (LayoutInflater) context.getSystemService(Context.LAYOUT_INFLATER_SERVICE);
+            View errorView = lf.inflate(R.layout.response_error_layout, null);
+            TextView tvErrorTitle = errorView.findViewById(R.id.tvErrorTitle);
+            tvErrorTitle.setText(when + "时，获取到调试信息：");
+            WebView wvErrorInfo = errorView.findViewById(R.id.wvErrorInfo);
+            wvErrorInfo.setInitialScale(100);
+            WebSettings settings = wvErrorInfo.getSettings();
+            settings.setLayoutAlgorithm(WebSettings.LayoutAlgorithm.SINGLE_COLUMN);
+            settings.setSupportZoom(true);
+            settings.setBuiltInZoomControls(true);
+            String showErrorHtml = "<html><head><meta charset=\"UTF-8\"></head><body>" + debugVal + "</body></html>";
+            wvErrorInfo.loadDataWithBaseURL(null, showErrorHtml, "text/html", "utf-8", null);
+            showDialog(context, errorView, new DialogBtnCallback() {
+                @Override
+                public void ok() {
+                    super.ok();
+                }
+            });
+        } else {
+            if (showErrorTip) {
+                showToast(context, when + "出错", Toast.LENGTH_LONG);
+            }
+        }
+    }
+
+
+    public static void checkLongTouch(View targetView, final LoneTouchProperty loneTouchProperty, final LongTouchCallback longTouchCallback) {
+        targetView.setOnTouchListener(new View.OnTouchListener() {
+            @Override
+            public boolean onTouch(View v, MotionEvent event) {
+                if (event.getAction() == MotionEvent.ACTION_DOWN) {
+                    loneTouchProperty.setLastX(v.getX());
+                    loneTouchProperty.setLastY(v.getY());
+                    loneTouchProperty.setLastDownTime(System.currentTimeMillis());
+                } else if (event.getAction() == MotionEvent.ACTION_MOVE) {
+                    if (!loneTouchProperty.isLongPressed()) {
+                        loneTouchProperty.setThisX(v.getX());
+                        loneTouchProperty.setThisY(v.getY());
+                        loneTouchProperty.setThisEventTime(System.currentTimeMillis());
+                        loneTouchProperty.setLongPressed(isLongPressed(loneTouchProperty.getLastX(), loneTouchProperty.getLastY(), loneTouchProperty.getLastDownTime(),
+                                loneTouchProperty.getThisX(), loneTouchProperty.getThisY(), loneTouchProperty.getThisEventTime(), loneTouchProperty.getLongPressTime()));
+                    }
+                    if (loneTouchProperty.isLongPressed()) {
+                        // 正在长按
+                        return longTouchCallback.isLongPressed();
+                    } else {
+                        // 还未到指定认为的达成长按时间
+                        return longTouchCallback.isLongPressing();
+                    }
+                } else if (event.getAction() == MotionEvent.ACTION_UP) {
+                    loneTouchProperty.setLongPressed(false);
+                    return longTouchCallback.finishLongPress();
+                } else if (event.getAction() == MotionEvent.ACTION_CANCEL) {
+                    loneTouchProperty.setLongPressed(false);
+                    return longTouchCallback.finishLongPress();
+                }
+                return false;
+            }
+        });
+    }
+
+    /**
+     * * 判断是否有长按动作发生 * @param lastX 按下时X坐标 * @param lastY 按下时Y坐标 *
+     *
+     * @param thisX         移动时X坐标 *
+     * @param thisY         移动时Y坐标 *
+     * @param lastDownTime  按下时间 *
+     * @param thisEventTime 移动时间 *
+     * @param longPressTime 判断长按时间的阀值
+     */
+    private static boolean isLongPressed(float lastX, float lastY, long lastDownTime,
+                                         float thisX, float thisY, long thisEventTime,
+                                         long longPressTime) {
+        float offsetX = Math.abs(thisX - lastX);
+        float offsetY = Math.abs(thisY - lastY);
+        long intervalTime = thisEventTime - lastDownTime;
+        if (intervalTime >= longPressTime) {
+            return true;
+        }
+        return false;
+    }
+
+    public static class LoneTouchProperty {
+        private float lastX = 0f;
+        private float lastY = 0f;
+        private long lastDownTime = 0;
+        private long longPressTime;
+        private float thisX = 0f;
+        private float thisY = 0f;
+        private long thisEventTime = 0;
+        private boolean isLongPressed = false;
+
+        public LoneTouchProperty(long longPressTime) {
+            this.longPressTime = longPressTime;
+        }
+
+        public float getLastX() {
+            return lastX;
+        }
+
+        public void setLastX(float lastX) {
+            this.lastX = lastX;
+        }
+
+        public float getLastY() {
+            return lastY;
+        }
+
+        public void setLastY(float lastY) {
+            this.lastY = lastY;
+        }
+
+        public long getLastDownTime() {
+            return lastDownTime;
+        }
+
+        public void setLastDownTime(long lastDownTime) {
+            this.lastDownTime = lastDownTime;
+        }
+
+        public long getLongPressTime() {
+            return longPressTime;
+        }
+
+        public void setLongPressTime(long longPressTime) {
+            this.longPressTime = longPressTime;
+        }
+
+        public float getThisX() {
+            return thisX;
+        }
+
+        public void setThisX(float thisX) {
+            this.thisX = thisX;
+        }
+
+        public float getThisY() {
+            return thisY;
+        }
+
+        public void setThisY(float thisY) {
+            this.thisY = thisY;
+        }
+
+        public long getThisEventTime() {
+            return thisEventTime;
+        }
+
+        public void setThisEventTime(long thisEventTime) {
+            this.thisEventTime = thisEventTime;
+        }
+
+        public boolean isLongPressed() {
+            return isLongPressed;
+        }
+
+        public void setLongPressed(boolean longPressed) {
+            isLongPressed = longPressed;
+        }
+    }
+
+    public static class LongTouchCallback implements LongTouchListener {
+        @Override
+        public boolean isLongPressed() {
+            return false;
+        }
+
+        @Override
+        public boolean isLongPressing() {
+            return false;
+        }
+
+        @Override
+        public boolean finishLongPress() {
+            return false;
+        }
+    }
+
+    private static interface LongTouchListener {
+        boolean isLongPressed();
+
+        boolean isLongPressing();
+
+        boolean finishLongPress();
     }
 }

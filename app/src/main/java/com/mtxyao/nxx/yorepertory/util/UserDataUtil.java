@@ -31,7 +31,7 @@ public class UserDataUtil {
     /////////////////////////// 系统设置
     public static final String fySysSet = "fySysSet";
     //////// 系统设置相关key值
-    public static final String key_debugMode = "debugMode";
+    public static final String key_tempDebugModule = "tempDebugModule";
 
     public static void setUserId(Context context, String userId) {
         SharedPreferencesTool.addOrUpdate(context, fyLoginUserInfo, key_userId, userId);

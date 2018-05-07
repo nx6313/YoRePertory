@@ -12,9 +12,12 @@
         android:orientation="vertical">
 
         <ImageView
+            android:id="@+id/btnLongToDebug"
             android:layout_width="match_parent"
             android:layout_height="0dp"
             android:layout_weight="6"
+            android:clickable="true"
+            android:focusable="true"
             android:src="@drawable/login_bg" />
 
         <RelativeLayout
@@ -92,7 +95,7 @@
                     android:layout_height="wrap_content"
                     android:layout_weight="3"
                     android:background="@color/zxing_transparent"
-                    android:hint="请输入您的手机号码"
+                    android:hint="请输入您的登录邮箱"
                     android:inputType="textEmailAddress"
                     android:padding="6dp"
                     android:textSize="14sp" />

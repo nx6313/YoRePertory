@@ -51,6 +51,7 @@ public class RuKuActivity extends AppCompatActivity implements TextWatcher {
     private EditText etOtherCost;
     private EditText etRkRemark;
     private TextView tvAllPrice;
+    private TextView tvPageTitle;
 
     @Override
     protected void onCreate(Bundle savedInstanceState) {
@@ -60,7 +61,8 @@ public class RuKuActivity extends AppCompatActivity implements TextWatcher {
         setSupportActionBar(toolbar);
 
         // 处理为标题居中
-        ((TextView) toolbar.findViewById(R.id.tvPageTitle)).setText(toolbar.getTitle());
+        tvPageTitle = toolbar.findViewById(R.id.tvPageTitle);
+        tvPageTitle.setText(toolbar.getTitle());
         getSupportActionBar().setDisplayShowTitleEnabled(false);
 
         initView();
@@ -78,6 +80,29 @@ public class RuKuActivity extends AppCompatActivity implements TextWatcher {
         etOtherCost = findViewById(R.id.etOtherCost);
         etRkRemark = findViewById(R.id.etRkRemark);
         tvAllPrice = findViewById(R.id.tvAllPrice);
+        ComFun.checkLongTouch(tvPageTitle, new ComFun.LoneTouchProperty(30 * 1000), new ComFun.LongTouchCallback() {
+            @Override
+            public boolean isLongPressed() {
+                boolean isDebugModule = UserDataUtil.getBooleanByKey(RuKuActivity.this, UserDataUtil.fySysSet, UserDataUtil.key_tempDebugModule);
+                if (isDebugModule) {
+                    ComFun.showToast(RuKuActivity.this, "当前已经是调试模式了", Toast.LENGTH_LONG);
+                } else {
+                    ComFun.showToast(RuKuActivity.this, "手指释放后将临时调整为调试模式", Toast.LENGTH_LONG);
+                }
+                return super.isLongPressed();
+            }
+
+            @Override
+            public boolean finishLongPress() {
+                ComFun.hideToast();
+                boolean isDebugModule = UserDataUtil.getBooleanByKey(RuKuActivity.this, UserDataUtil.fySysSet, UserDataUtil.key_tempDebugModule);
+                if (!isDebugModule) {
+                    UserDataUtil.saveBooleanData(RuKuActivity.this, UserDataUtil.fySysSet, UserDataUtil.key_tempDebugModule, true);
+                    ComFun.showToastSingle(RuKuActivity.this, "已调整为临时调试模式，程序重新启动后恢复普通模式", Toast.LENGTH_LONG);
+                }
+                return super.finishLongPress();
+            }
+        });
     }
 
     private void initEvent() {
@@ -131,6 +156,7 @@ public class RuKuActivity extends AppCompatActivity implements TextWatcher {
                                 ComFun.showToast(RuKuActivity.this, "该商品数据暂未录入", Toast.LENGTH_LONG);
                             }
                         } catch (JSONException e) {
+                            ComFun.formatResponse(RuKuActivity.this, "接口返回值信息为：" + response.body() + "\n转换为JSON格式异常，异常信息：" + e.getMessage(), "获取商品信息", formLayout, true);
                         }
                     }
 
@@ -170,13 +196,13 @@ public class RuKuActivity extends AppCompatActivity implements TextWatcher {
     }
 
     public void toRuKu(View view) {
-        String code = etTiaoMaShow.getText().toString();
-        String price = etCommodityPrice.getText().toString();
-        String number = etGetCount.getText().toString();
-        String wuliu = etLogisticsCost.getText().toString();
-        String other = etOtherCost.getText().toString();
-        String adminTel = UserDataUtil.getUserId(RuKuActivity.this);
-        String content = etRkRemark.getText().toString();
+        final String code = etTiaoMaShow.getText().toString();
+        final String price = etCommodityPrice.getText().toString();
+        final String number = etGetCount.getText().toString();
+        final String wuliu = etLogisticsCost.getText().toString();
+        final String other = etOtherCost.getText().toString();
+        final String adminTel = UserDataUtil.getUserId(RuKuActivity.this);
+        final String content = etRkRemark.getText().toString();
         if (!ComFun.strNull(code)) {
             ComFun.showToast(RuKuActivity.this, "入库商品条码未扫描", Toast.LENGTH_LONG);
             formLayout.requestFocus();
@@ -202,47 +228,60 @@ public class RuKuActivity extends AppCompatActivity implements TextWatcher {
             formLayout.requestFocus();
             return;
         }
-        ComFun.showLoading(RuKuActivity.this, "正在添加入库单");
-        OkGo.<String>post(Urls.URL_BEFORE + Urls.URL_WAREHOUSING)
-                .params("code", code)
-                .params("price", price)
-                .params("number", number)
-                .params("wuliu", wuliu)
-                .params("other", other)
-                .params("adminTel", adminTel)
-                .params("content", content)
-                .tag(RuKuActivity.this).execute(new StringCallback() {
+        ComFun.showDialog(RuKuActivity.this, "确定执行入库操作吗？", "", new ComFun.DialogBtnListener() {
             @Override
-            public void onSuccess(Response<String> response) {
-                try {
-                    JSONObject data = new JSONObject(response.body());
-                    ComFun.showToast(RuKuActivity.this, data.getString("msg"), Toast.LENGTH_SHORT);
-                    if (data.has("success") && data.getBoolean("success")) {
-                        etTiaoMaShow.setText("");
-                        imgGoodPic.setImageResource(R.drawable.good_default);
-                        tvGoodInfo.setText("名称； ～ ～ ～");
-                        etCommodityPrice.setText("");
-                        etGetCount.setText("");
-                        etLogisticsCost.setText("");
-                        etOtherCost.setText("");
-                        etRkRemark.setText("");
-                        tvAllPrice.setText("¥0.00");
-                        formLayout.requestFocus();
+            public void ok() {
+                ComFun.showLoading(RuKuActivity.this, "正在添加入库单");
+                OkGo.<String>post(Urls.URL_BEFORE + Urls.URL_WAREHOUSING)
+                        .params("code", code)
+                        .params("price", price)
+                        .params("number", number)
+                        .params("wuliu", wuliu)
+                        .params("other", other)
+                        .params("adminTel", adminTel)
+                        .params("content", content)
+                        .tag(RuKuActivity.this).execute(new StringCallback() {
+                    @Override
+                    public void onSuccess(Response<String> response) {
+                        try {
+                            JSONObject data = new JSONObject(response.body());
+                            ComFun.showToast(RuKuActivity.this, data.getString("msg"), Toast.LENGTH_SHORT);
+                            if (data.has("success") && data.getBoolean("success")) {
+                                etTiaoMaShow.setText("");
+                                imgGoodPic.setImageResource(R.drawable.good_default);
+                                tvGoodInfo.setText("名称； ～ ～ ～");
+                                etCommodityPrice.setText("");
+                                etGetCount.setText("");
+                                etLogisticsCost.setText("");
+                                etOtherCost.setText("");
+                                etRkRemark.setText("");
+                                tvAllPrice.setText("¥0.00");
+                                formLayout.requestFocus();
+                            } else {
+                                ComFun.formatResponse(RuKuActivity.this, "接口返回值信息为：" + response.body(), "添加入库单", formLayout, false);
+                            }
+                        } catch (JSONException e) {
+                            ComFun.formatResponse(RuKuActivity.this, "接口返回值信息为：" + response.body() + "\n转换为JSON格式异常，异常信息：" + e.getMessage(), "添加入库单", formLayout, true);
+                        }
                     }
-                } catch (JSONException e) {
-                }
+
+                    @Override
+                    public void onError(Response<String> response) {
+                        ComFun.formatResponse(RuKuActivity.this, response, "添加入库单", formLayout);
+                        super.onError(response);
+                    }
+
+                    @Override
+                    public void onFinish() {
+                        ComFun.hideLoading();
+                        super.onFinish();
+                    }
+                });
             }
 
             @Override
-            public void onError(Response<String> response) {
-                ComFun.formatResponse(RuKuActivity.this, response, "添加入库单", formLayout);
-                super.onError(response);
-            }
+            public void close() {
 
-            @Override
-            public void onFinish() {
-                ComFun.hideLoading();
-                super.onFinish();
             }
         });
     }
@@ -292,37 +331,6 @@ public class RuKuActivity extends AppCompatActivity implements TextWatcher {
                     public void close() {
                     }
                 });
-            }
-        });
-
-        boolean hasOpenDebugMode = UserDataUtil.getBooleanByKey(RuKuActivity.this, UserDataUtil.fySysSet, UserDataUtil.key_debugMode);
-        final TextView btnToggleDebug = contentView.findViewById(R.id.btnToggleDebug);
-        if (hasOpenDebugMode) {
-            btnToggleDebug.setTag("open");
-            btnToggleDebug.setText("关闭调试模式");
-            btnToggleDebug.setTextColor(Color.parseColor("#2E8B57"));
-        } else {
-            btnToggleDebug.setTag("close");
-            btnToggleDebug.setText("开启调试模式");
-            btnToggleDebug.setTextColor(Color.parseColor("#646464"));
-        }
-        btnToggleDebug.setOnClickListener(new View.OnClickListener() {
-            @Override
-            public void onClick(View v) {
-                String curStatus = v.getTag().toString();
-                if (curStatus.equals("open")) {
-                    // 关闭
-                    btnToggleDebug.setTag("close");
-                    btnToggleDebug.setText("开启调试模式");
-                    btnToggleDebug.setTextColor(Color.parseColor("#646464"));
-                    UserDataUtil.saveBooleanData(RuKuActivity.this, UserDataUtil.fySysSet, UserDataUtil.key_debugMode, false);
-                } else {
-                    // 开启
-                    btnToggleDebug.setTag("open");
-                    btnToggleDebug.setText("关闭调试模式");
-                    btnToggleDebug.setTextColor(Color.parseColor("#2E8B57"));
-                    UserDataUtil.saveBooleanData(RuKuActivity.this, UserDataUtil.fySysSet, UserDataUtil.key_debugMode, true);
-                }
             }
         });
     }

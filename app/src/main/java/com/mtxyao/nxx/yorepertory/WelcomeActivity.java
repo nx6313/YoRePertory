@@ -18,6 +18,9 @@ public class WelcomeActivity extends AppCompatActivity {
         super.onCreate(savedInstanceState);
         setContentView(R.layout.activity_welcome);
 
+        // 重置临时可否调试缓存值
+        UserDataUtil.saveBooleanData(WelcomeActivity.this, UserDataUtil.fySysSet, UserDataUtil.key_tempDebugModule, false);
+
         start_app_btn = findViewById(R.id.start_app_btn);
 
         final UserData userData = UserDataUtil.getUserData(WelcomeActivity.this, UserData.class);

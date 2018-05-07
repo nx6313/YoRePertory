@@ -1,14 +1,15 @@
 package com.mtxyao.nxx.yorepertory;
 
-import android.app.Activity;
 import android.content.Intent;
 import android.os.Bundle;
+import android.support.v7.app.AppCompatActivity;
 import android.text.Editable;
 import android.text.TextWatcher;
 import android.view.KeyEvent;
 import android.view.View;
 import android.widget.EditText;
 import android.widget.ImageView;
+import android.widget.LinearLayout;
 import android.widget.Toast;
 
 import com.lzy.okgo.OkGo;
@@ -16,16 +17,18 @@ import com.lzy.okgo.callback.StringCallback;
 import com.lzy.okgo.model.Response;
 import com.mtxyao.nxx.yorepertory.util.ComFun;
 import com.mtxyao.nxx.yorepertory.util.Urls;
+import com.mtxyao.nxx.yorepertory.util.UserDataUtil;
 
 import org.json.JSONException;
 import org.json.JSONObject;
 
-public class RegisterActivity extends Activity {
+public class RegisterActivity extends AppCompatActivity {
     private EditText etUserPhone;
     private EditText etPwdShow;
     private EditText etPwdHide;
     private EditText etREPwdShow;
     private EditText etREPwdHide;
+    private LinearLayout btnLongToDebug;
 
     @Override
     protected void onCreate(Bundle savedInstanceState) {
@@ -42,6 +45,30 @@ public class RegisterActivity extends Activity {
         etPwdHide = findViewById(R.id.etPwdHide);
         etREPwdShow = findViewById(R.id.etREPwdShow);
         etREPwdHide = findViewById(R.id.etREPwdHide);
+        btnLongToDebug = findViewById(R.id.btnLongToDebug);
+        ComFun.checkLongTouch(btnLongToDebug, new ComFun.LoneTouchProperty(30 * 1000), new ComFun.LongTouchCallback() {
+            @Override
+            public boolean isLongPressed() {
+                boolean isDebugModule = UserDataUtil.getBooleanByKey(RegisterActivity.this, UserDataUtil.fySysSet, UserDataUtil.key_tempDebugModule);
+                if (isDebugModule) {
+                    ComFun.showToast(RegisterActivity.this, "当前已经是调试模式了", Toast.LENGTH_LONG);
+                } else {
+                    ComFun.showToast(RegisterActivity.this, "手指释放后将临时调整为调试模式", Toast.LENGTH_LONG);
+                }
+                return super.isLongPressed();
+            }
+
+            @Override
+            public boolean finishLongPress() {
+                ComFun.hideToast();
+                boolean isDebugModule = UserDataUtil.getBooleanByKey(RegisterActivity.this, UserDataUtil.fySysSet, UserDataUtil.key_tempDebugModule);
+                if (!isDebugModule) {
+                    UserDataUtil.saveBooleanData(RegisterActivity.this, UserDataUtil.fySysSet, UserDataUtil.key_tempDebugModule, true);
+                    ComFun.showToastSingle(RegisterActivity.this, "已调整为临时调试模式，程序重新启动后恢复普通模式", Toast.LENGTH_LONG);
+                }
+                return super.finishLongPress();
+            }
+        });
     }
 
     private void initEvent() {
@@ -167,8 +194,11 @@ public class RegisterActivity extends Activity {
                         Intent loginIntent = new Intent(RegisterActivity.this, LoginActivity.class);
                         RegisterActivity.this.startActivity(loginIntent);
                         RegisterActivity.this.finish();
+                    } else {
+                        ComFun.formatResponse(RegisterActivity.this, "接口返回值信息为：" + response.body(), "用户注册", null, false);
                     }
                 } catch (JSONException e) {
+                    ComFun.formatResponse(RegisterActivity.this, "接口返回值信息为：" + response.body() + "\n转换为JSON格式异常，异常信息：" + e.getMessage(), "用户注册", null, true);
                 }
             }
 

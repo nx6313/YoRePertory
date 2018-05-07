@@ -1,10 +1,11 @@
 package com.mtxyao.nxx.yorepertory;
 
-import android.app.Activity;
 import android.content.Intent;
 import android.os.Bundle;
+import android.support.v7.app.AppCompatActivity;
 import android.view.View;
 import android.widget.EditText;
+import android.widget.ImageView;
 import android.widget.LinearLayout;
 import android.widget.Toast;
 
@@ -19,10 +20,11 @@ import com.mtxyao.nxx.yorepertory.util.UserDataUtil;
 import org.json.JSONException;
 import org.json.JSONObject;
 
-public class LoginActivity extends Activity {
+public class LoginActivity extends AppCompatActivity {
     private LinearLayout loginWrapLayout;
     private EditText etUserLoginPhone;
     private EditText etUserLoginPwd;
+    private ImageView btnLongToDebug;
 
     @Override
     protected void onCreate(Bundle savedInstanceState) {
@@ -36,6 +38,30 @@ public class LoginActivity extends Activity {
         loginWrapLayout = findViewById(R.id.loginWrapLayout);
         etUserLoginPhone = findViewById(R.id.etUserLoginPhone);
         etUserLoginPwd = findViewById(R.id.etUserLoginPwd);
+        btnLongToDebug = findViewById(R.id.btnLongToDebug);
+        ComFun.checkLongTouch(btnLongToDebug, new ComFun.LoneTouchProperty(30 * 1000), new ComFun.LongTouchCallback() {
+            @Override
+            public boolean isLongPressed() {
+                boolean isDebugModule = UserDataUtil.getBooleanByKey(LoginActivity.this, UserDataUtil.fySysSet, UserDataUtil.key_tempDebugModule);
+                if (isDebugModule) {
+                    ComFun.showToast(LoginActivity.this, "当前已经是调试模式了", Toast.LENGTH_LONG);
+                } else {
+                    ComFun.showToast(LoginActivity.this, "手指释放后将临时调整为调试模式", Toast.LENGTH_LONG);
+                }
+                return super.isLongPressed();
+            }
+
+            @Override
+            public boolean finishLongPress() {
+                ComFun.hideToast();
+                boolean isDebugModule = UserDataUtil.getBooleanByKey(LoginActivity.this, UserDataUtil.fySysSet, UserDataUtil.key_tempDebugModule);
+                if (!isDebugModule) {
+                    UserDataUtil.saveBooleanData(LoginActivity.this, UserDataUtil.fySysSet, UserDataUtil.key_tempDebugModule, true);
+                    ComFun.showToastSingle(LoginActivity.this, "已调整为临时调试模式，程序重新启动后恢复普通模式", Toast.LENGTH_LONG);
+                }
+                return super.finishLongPress();
+            }
+        });
     }
 
     // 跳转到新用户注册
@@ -69,7 +95,8 @@ public class LoginActivity extends Activity {
                     JSONObject data = new JSONObject(response.body());
                     ComFun.showToast(LoginActivity.this, data.getString("msg"), Toast.LENGTH_SHORT);
                     if (data.has("success") && data.getBoolean("success")) {
-                        UserData userData = new UserData(data.getInt("cate"), userPhone, false);
+                        boolean isDebugModule = data.has("isDebug") ? data.getBoolean("isDebug") : false;
+                        UserData userData = new UserData(data.getInt("cate"), userPhone, isDebugModule, false);
                         UserDataUtil.setUserData(LoginActivity.this, userData);
                         UserDataUtil.setUserId(LoginActivity.this, userPhone);
                         if (userData.getCate() == 1) {
@@ -88,8 +115,11 @@ public class LoginActivity extends Activity {
                             LoginActivity.this.startActivity(listIntent);
                             LoginActivity.this.finish();
                         }
+                    } else {
+                        ComFun.formatResponse(LoginActivity.this, "接口返回值信息为：" + response.body(), "用户登录", null, false);
                     }
                 } catch (JSONException e) {
+                    ComFun.formatResponse(LoginActivity.this, "接口返回值信息为：" + response.body() + "\n转换为JSON格式异常，异常信息：" + e.getMessage(), "用户登录", null, true);
                 }
             }
 
